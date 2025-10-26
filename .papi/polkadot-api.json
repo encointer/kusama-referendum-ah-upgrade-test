@@ -1,0 +1,18 @@
+{
+  "version": 0,
+  "descriptorPath": ".papi/descriptors",
+  "entries": {
+    "kusama_asset_hub": {
+      "wsUrl": "wss://asset-hub-kusama-rpc.n.dwellir.com",
+      "metadata": ".papi/metadata/kusama_asset_hub.scale",
+      "genesis": "0x48239ef607d7928874027a43a67689209727dfb3d3dc5e5b03a39bdc2eda771a",
+      "codeHash": "0xee6d70c902e426f11890146bbbb3da440cf45e49240f525f0cece9e9be1fcc6c"
+    },
+    "kusama_relay": {
+      "wsUrl": "wss://kusama-rpc.n.dwellir.com",
+      "metadata": ".papi/metadata/kusama_relay.scale",
+      "genesis": "0xb0a8d493285c2df73290dfb7e61f870f17b41801197a149ca93654499ea3dafe",
+      "codeHash": "0xd905ea233b779dfae428febc319661bbcc0ee861dcec336d18e5a3dc6ee667f6"
+    }
+  }
+}

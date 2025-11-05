@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 
-import { kusama_asset_hub, kusama_relay } from '@polkadot-api/descriptors'
+import { kusama_asset_hub, kusama_relay, kusama_encointer } from '@polkadot-api/descriptors'
 import { getPolkadotSigner } from 'polkadot-api/signer'
 import { compactAddLength } from '@polkadot/util'
 import { Binary, AccountId, HexString } from '@polkadot-api/substrate-bindings'
@@ -55,8 +55,8 @@ interface CliOptions {
 }
 
 async function main(cliOptions: CliOptions) {
-  console.log('Setting up Kusama and AssetHub networks...')
-  const { kusama, assetHub } = await setupNetworks({
+  console.log('Setting up Kusama, Assethub and Encointer networks...')
+  const { kusama, assetHub, encointer } = await setupNetworks({
     kusama: {
       endpoint: 'wss://kusama-rpc.n.dwellir.com',
       port: 8000,
@@ -73,13 +73,23 @@ async function main(cliOptions: CliOptions) {
       runtimeLogLevel: 0,
       'log-level': 0
     },
+     encointer: {
+         endpoint: 'wss://encointer-kusama-rpc.n.dwellir.com',
+         port: 8002,
+         'mock-signature-host': true,
+         'build-block-mode': 'Instant',
+         runtimeLogLevel: 0,
+         'log-level': 0
+      },
   })
 
   console.log(`Asserting Kusama network setup: ${kusama ? 'SUCCESS' : 'FAILED'}`)
   assert(kusama, 'Kusama network setup failed')
   console.log(`Asserting AssetHub network setup: ${assetHub ? 'SUCCESS' : 'FAILED'}`)
   assert(assetHub, 'AssetHub network setup failed')
-  console.log('Both networks initialized successfully')
+  console.log(`Asserting Encointer network setup: ${encointer ? 'SUCCESS' : 'FAILED'}`)
+  assert(encointer, 'Encointer network setup failed')
+  console.log('All networks initialized successfully')
 
   const kusamaRelayClient = createClient(
     withPolkadotSdkCompat(getWsProvider('ws://localhost:8000'))
@@ -90,6 +100,11 @@ async function main(cliOptions: CliOptions) {
     withPolkadotSdkCompat(getWsProvider('ws://localhost:8001'))
   )
   const kusamaAssetHubApi = kusamaAssetHubClient.getTypedApi(kusama_asset_hub)
+
+  const encointerClient = createClient(
+      withPolkadotSdkCompat(getWsProvider('ws://localhost:8002'))
+  )
+  const encointerApi = encointerClient.getTypedApi(kusama_encointer)
 
   const fellowshipRefSubmitCall = await kusamaRelayApi.txFromCallData(
     Binary.fromHex(cliOptions.callToCreateFellowshipReferendum)
@@ -224,8 +239,8 @@ async function main(cliOptions: CliOptions) {
   await assetHub.dev.newBlock()
   console.log('Public referendum scheduled and executed')
 
-  console.log('Querying System.AuthorizedUpgrade on AssetHub...')
-  const authorizedUpgradeOnAh = await kusamaAssetHubApi.query.System.AuthorizedUpgrade.getValue()
+  console.log('Querying System.AuthorizedUpgrade on Encointer...')
+  const authorizedUpgradeOnAh = await encointerApi.query.System.AuthorizedUpgrade.getValue()
   const actualCodeHash = authorizedUpgradeOnAh?.code_hash.asHex()
   console.log(`Authorized upgrade code hash: ${actualCodeHash}`)
   console.log(`Expected code hash: ${cliOptions.expectedCodeHash}`)
@@ -241,29 +256,32 @@ async function main(cliOptions: CliOptions) {
   const wasmCode = readFileSync(cliOptions.wasm)
   console.log(`WASM file size: ${wasmCode.length} bytes`)
 
-  const applyAuthorizedUpgradeCall = assetHub.api.tx.system.applyAuthorizedUpgrade(
+  const applyAuthorizedUpgradeCall = encointer.api.tx.system.applyAuthorizedUpgrade(
     compactAddLength(wasmCode)
   )
 
   console.log('Submitting apply_authorized_upgrade as unsigned extrinsic...')
 
-  await assetHub.api.rpc.author.submitExtrinsic(applyAuthorizedUpgradeCall.toHex())
+  await encointer.api.rpc.author.submitExtrinsic(applyAuthorizedUpgradeCall.toHex())
 
   console.log('apply_authorized_upgrade submitted successfully')
 
-  await assetHub.dev.newBlock()
+  await encointer.dev.newBlock()
 
   console.log('New block created after upgrade')
 
   // assetHub.pause()
   // await kusama.pause()
+  // await encointer.pause()
 
   console.log('Destroying polkadot-api clients...')
   kusamaRelayClient.destroy()
   kusamaAssetHubClient.destroy()
+  encointerClient.destroy()
 
   await assetHub.teardown()
   await kusama.teardown()
+  await encointer.teardown()
 
   console.log('Cleanup complete, exiting...')
 }

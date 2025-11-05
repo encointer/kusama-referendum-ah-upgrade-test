@@ -6,7 +6,7 @@
       "wsUrl": "wss://asset-hub-kusama-rpc.n.dwellir.com",
       "metadata": ".papi/metadata/kusama_asset_hub.scale",
       "genesis": "0x48239ef607d7928874027a43a67689209727dfb3d3dc5e5b03a39bdc2eda771a",
-      "codeHash": "0xee6d70c902e426f11890146bbbb3da440cf45e49240f525f0cece9e9be1fcc6c"
+      "codeHash": "0x099d803ee67d6c1859d84342d61c01eed373323448f7fd230a4e85a668806448"
     },
     "kusama_relay": {
       "wsUrl": "wss://kusama-rpc.n.dwellir.com",
@@ -18,7 +18,7 @@
       "wsUrl": "wss://encointer-kusama-rpc.n.dwellir.com",
       "metadata": ".papi/metadata/kusama_encointer.scale",
       "genesis": "0x7dd99936c1e9e6d1ce7d90eb6f33bea8393b4bf87677d675aa63c9cb3e8c5b5b",
-      "codeHash": "0xd905ea233b779dfae428febc319661bbcc0ee861dcec336d18e5a3dc6ee667f6"
+      "codeHash": "0x6b75868e6339e38aa930b244c6cfe45d70401cefab67f8f2a072caf01065e5cd"
     }
   }
 }

@@ -56,15 +56,15 @@ interface CliOptions {
 
 async function main(cliOptions: CliOptions) {
   console.log('Setting up Kusama, Assethub and Encointer networks...')
-  const { assetHub, encointer } = await setupNetworks({
-    // kusama: {
-    //   endpoint: 'wss://kusama-rpc.n.dwellir.com',
-    //   port: 8000,
-    //   'mock-signature-host': true,
-    //   'build-block-mode': 'Instant',
-    //   runtimeLogLevel: 0,
-    //   'log-level': 0
-    // },
+  const { kusama, assetHub, encointer } = await setupNetworks({
+    kusama: {
+      endpoint: 'wss://kusama-rpc.n.dwellir.com',
+      port: 8000,
+      'mock-signature-host': true,
+      'build-block-mode': 'Instant',
+      runtimeLogLevel: 0,
+      'log-level': 0
+    },
     assetHub: {
       endpoint: 'wss://asset-hub-kusama-rpc.n.dwellir.com',
       port: 8001,
@@ -83,18 +83,18 @@ async function main(cliOptions: CliOptions) {
       },
   })
 
-  // console.log(`Asserting Kusama network setup: ${kusama ? 'SUCCESS' : 'FAILED'}`)
-  // assert(kusama, 'Kusama network setup failed')
+  console.log(`Asserting Kusama network setup: ${kusama ? 'SUCCESS' : 'FAILED'}`)
+  assert(kusama, 'Kusama network setup failed')
   console.log(`Asserting AssetHub network setup: ${assetHub ? 'SUCCESS' : 'FAILED'}`)
   assert(assetHub, 'AssetHub network setup failed')
   console.log(`Asserting Encointer network setup: ${encointer ? 'SUCCESS' : 'FAILED'}`)
   assert(encointer, 'Encointer network setup failed')
   console.log('All networks initialized successfully')
 
-  // const kusamaRelayClient = createClient(
-  //   withPolkadotSdkCompat(getWsProvider('ws://localhost:8000'))
-  // )
-  // const kusamaRelayApi = kusamaRelayClient.getTypedApi(kusama_relay)
+  const kusamaRelayClient = createClient(
+    withPolkadotSdkCompat(getWsProvider('ws://localhost:8000'))
+  )
+  const kusamaRelayApi = kusamaRelayClient.getTypedApi(kusama_relay)
 
   const kusamaAssetHubClient = createClient(
     withPolkadotSdkCompat(getWsProvider('ws://localhost:8001'))
@@ -106,9 +106,9 @@ async function main(cliOptions: CliOptions) {
   )
   const encointerApi = encointerClient.getTypedApi(kusama_encointer)
 
-  // const fellowshipRefSubmitCall = await kusamaRelayApi.txFromCallData(
-  //   Binary.fromHex(cliOptions.callToCreateFellowshipReferendum)
-  // )
+  const fellowshipRefSubmitCall = await kusamaRelayApi.txFromCallData(
+    Binary.fromHex(cliOptions.callToCreateFellowshipReferendum)
+  )
 
   const assetHubRefSubmitCall = await kusamaAssetHubApi.txFromCallData(
     Binary.fromHex(cliOptions.callToCreateAssetHubReferendum)
@@ -123,20 +123,20 @@ async function main(cliOptions: CliOptions) {
   console.log(`Asset Hub referendum signer: ${cliOptions.signerForAssetHubReferendum}`)
   const assetHubSigner = fakeSigner(cliOptions.signerForAssetHubReferendum)
 
-  // console.log('Submitting fellowship referendum...')
-  // let fellowshipRefSubmitResult = await fellowshipRefSubmitCall.signAndSubmit(fellowshipSigner)
-  // console.log(`Asserting fellowship referendum submission result: ${fellowshipRefSubmitResult.ok ? 'SUCCESS' : 'FAILED'}`)
-  // assert(fellowshipRefSubmitResult.ok)
-  //
-  // console.log('Pulling FellowshipReferenda.Submitted events...')
-  // let fellowshipRefEvents = await kusamaRelayApi.event.FellowshipReferenda.Submitted.pull()
-  // console.log(`Asserting exactly 1 fellowship referendum event received: ${fellowshipRefEvents.length} events found`)
-  // assert(fellowshipRefEvents.length == 1)
-  // const fellowshipRefEvent = fellowshipRefEvents[0]
-  // console.log(`Asserting fellowship referendum event exists: ${fellowshipRefEvent ? 'SUCCESS' : 'FAILED'}`)
-  // assert(fellowshipRefEvent, 'No fellowship referendum event found')
-  // const fellowshipReferendumIndex = fellowshipRefEvent.payload.index
-  // console.log(`Fellowship referendum index: ${fellowshipReferendumIndex}`)
+  console.log('Submitting fellowship referendum...')
+  let fellowshipRefSubmitResult = await fellowshipRefSubmitCall.signAndSubmit(fellowshipSigner)
+  console.log(`Asserting fellowship referendum submission result: ${fellowshipRefSubmitResult.ok ? 'SUCCESS' : 'FAILED'}`)
+  assert(fellowshipRefSubmitResult.ok)
+
+  console.log('Pulling FellowshipReferenda.Submitted events...')
+  let fellowshipRefEvents = await kusamaRelayApi.event.FellowshipReferenda.Submitted.pull()
+  console.log(`Asserting exactly 1 fellowship referendum event received: ${fellowshipRefEvents.length} events found`)
+  assert(fellowshipRefEvents.length == 1)
+  const fellowshipRefEvent = fellowshipRefEvents[0]
+  console.log(`Asserting fellowship referendum event exists: ${fellowshipRefEvent ? 'SUCCESS' : 'FAILED'}`)
+  assert(fellowshipRefEvent, 'No fellowship referendum event found')
+  const fellowshipReferendumIndex = fellowshipRefEvent.payload.index
+  console.log(`Fellowship referendum index: ${fellowshipReferendumIndex}`)
 
   console.log('Submitting public referendum on AssetHub...')
   let publicRefSubmitResult = await assetHubRefSubmitCall.signAndSubmit(assetHubSigner)
@@ -166,39 +166,39 @@ async function main(cliOptions: CliOptions) {
   await assetHub.dev.newBlock()
 
   // lets assume Fellowship referenda passed
-  // console.log(`Querying fellowship referendum state for index ${fellowshipReferendumIndex}...`)
-  // let fellowRef =
-  //   await kusamaRelayApi.query.FellowshipReferenda.ReferendumInfoFor.getValue(
-  //     fellowshipReferendumIndex
-  //   )
-  // console.log(`Fellowship referendum type: ${fellowRef?.type || 'undefined'}`)
-  // console.log(`Asserting fellowship referendum is 'Ongoing': ${fellowRef?.type === 'Ongoing' ? 'SUCCESS' : 'FAILED'}`)
-  // assert(fellowRef?.type === 'Ongoing')
-  // console.log(`Fellowship referendum proposal type: ${fellowRef.value.proposal.type}`)
-  // console.log(`Asserting proposal is 'Inline': ${fellowRef.value.proposal.type === 'Inline' ? 'SUCCESS' : 'FAILED'}`)
-  // assert(fellowRef.value.proposal.type === 'Inline')
-  // await kusama.dev.setStorage({
-  //   Scheduler: {
-  //     agenda: [
-  //       [
-  //         [(await kusamaRelayClient.getBlockHeader()).number + 1],
-  //         [
-  //           {
-  //             call: {
-  //               Inline: fellowRef.value.proposal.value.asHex(),
-  //             },
-  //             origin: {
-  //               Origins: 'Fellows',
-  //             },
-  //           },
-  //         ],
-  //       ],
-  //     ],
-  //   },
-  // })
-  // console.log('Setting fellowship referendum to pass via scheduler...')
-  // await kusama.dev.newBlock()
-  // console.log('Fellowship referendum scheduled and executed')
+  console.log(`Querying fellowship referendum state for index ${fellowshipReferendumIndex}...`)
+  let fellowRef =
+    await kusamaRelayApi.query.FellowshipReferenda.ReferendumInfoFor.getValue(
+      fellowshipReferendumIndex
+    )
+  console.log(`Fellowship referendum type: ${fellowRef?.type || 'undefined'}`)
+  console.log(`Asserting fellowship referendum is 'Ongoing': ${fellowRef?.type === 'Ongoing' ? 'SUCCESS' : 'FAILED'}`)
+  assert(fellowRef?.type === 'Ongoing')
+  console.log(`Fellowship referendum proposal type: ${fellowRef.value.proposal.type}`)
+  console.log(`Asserting proposal is 'Inline': ${fellowRef.value.proposal.type === 'Inline' ? 'SUCCESS' : 'FAILED'}`)
+  assert(fellowRef.value.proposal.type === 'Inline')
+  await kusama.dev.setStorage({
+    Scheduler: {
+      agenda: [
+        [
+          [(await kusamaRelayClient.getBlockHeader()).number + 1],
+          [
+            {
+              call: {
+                Inline: fellowRef.value.proposal.value.asHex(),
+              },
+              origin: {
+                Origins: 'Fellows',
+              },
+            },
+          ],
+        ],
+      ],
+    },
+  })
+  console.log('Setting fellowship referendum to pass via scheduler...')
+  await kusama.dev.newBlock()
+  console.log('Fellowship referendum scheduled and executed')
 
   // lets assume public referenda also passed
   console.log(`Querying public referendum state for index ${publicReferendumIndex}...`)
@@ -275,12 +275,12 @@ async function main(cliOptions: CliOptions) {
   // await encointer.pause()
 
   console.log('Destroying polkadot-api clients...')
-  // kusamaRelayClient.destroy()
+  kusamaRelayClient.destroy()
   kusamaAssetHubClient.destroy()
   encointerClient.destroy()
 
   await assetHub.teardown()
-  // await kusama.teardown()
+  await kusama.teardown()
   await encointer.teardown()
 
   console.log('Cleanup complete, exiting...')

@@ -8,6 +8,7 @@ async function main() {
       "build-block-mode": "Manual",
       "log-level": 4,
       runtimeLogLevel: 4,
+      timeout: 120000
     },
   });
   assert(kusama, 'relay network setup failed')

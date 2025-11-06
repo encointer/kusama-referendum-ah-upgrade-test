@@ -6,7 +6,7 @@
       "wsUrl": "wss://asset-hub-kusama-rpc.n.dwellir.com",
       "metadata": ".papi/metadata/kusama_asset_hub.scale",
       "genesis": "0x48239ef607d7928874027a43a67689209727dfb3d3dc5e5b03a39bdc2eda771a",
-      "codeHash": "0x099d803ee67d6c1859d84342d61c01eed373323448f7fd230a4e85a668806448"
+      "codeHash": "0xe3b1cff634878a0176df177caaa6333efca2c33fc7313fdf66c3195e2ed15883"
     },
     "kusama_relay": {
       "wsUrl": "wss://kusama-rpc.n.dwellir.com",

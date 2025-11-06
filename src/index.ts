@@ -63,7 +63,8 @@ async function main(cliOptions: CliOptions) {
       'mock-signature-host': true,
       'build-block-mode': 'Instant',
       runtimeLogLevel: 0,
-      'log-level': 0
+      'log-level': 0,
+      timeout: 120000
     },
     assetHub: {
       endpoint: 'wss://asset-hub-kusama-rpc.n.dwellir.com',

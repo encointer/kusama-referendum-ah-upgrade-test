@@ -10,7 +10,7 @@
     "kusama-referenda-upgrade": "./src/index.ts"
   },
   "dependencies": {
-    "@acala-network/chopsticks-testing": "1.2.3",
+    "@acala-network/chopsticks-testing": "1.2.4",
     "@polkadot-api/descriptors": "file:.papi/descriptors",
     "@polkadot-labs/hdkd": "^0.0.10",
     "@polkadot-labs/hdkd-helpers": "^0.0.10",

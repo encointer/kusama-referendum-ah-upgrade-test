@@ -250,6 +250,8 @@ async function main(cliOptions: CliOptions) {
   })
   console.log('Setting public referendum to pass via scheduler...')
   await assetHub.dev.newBlock()
+  await kusama.dev.newBlock()
+  await encointer.dev.newBlock()
   console.log('Public referendum scheduled and executed')
 
   console.log('Querying System.AuthorizedUpgrade on Encointer...')

@@ -64,7 +64,7 @@ async function main(cliOptions: CliOptions) {
       'build-block-mode': 'Instant',
       runtimeLogLevel: 0,
       'log-level': 0,
-      timeout: 120000
+      timeout: 360000
     },
     assetHub: {
       endpoint: 'wss://asset-hub-kusama-rpc.n.dwellir.com',
@@ -72,7 +72,8 @@ async function main(cliOptions: CliOptions) {
       'mock-signature-host': true,
       'build-block-mode': 'Instant',
       runtimeLogLevel: 0,
-      'log-level': 0
+      'log-level': 0,
+      timeout: 360000
     },
      encointer: {
          endpoint: 'wss://encointer-kusama-rpc.n.dwellir.com',
@@ -80,8 +81,9 @@ async function main(cliOptions: CliOptions) {
          'mock-signature-host': true,
          'build-block-mode': 'Instant',
          runtimeLogLevel: 0,
-         'log-level': 0
-      },
+         'log-level': 0,
+         timeout: 360000
+     },
   })
 
   console.log(`Asserting Kusama network setup: ${kusama ? 'SUCCESS' : 'FAILED'}`)
@@ -92,18 +94,28 @@ async function main(cliOptions: CliOptions) {
   assert(encointer, 'Encointer network setup failed')
   console.log('All networks initialized successfully')
 
+
   const kusamaRelayClient = createClient(
-    withPolkadotSdkCompat(getWsProvider('ws://localhost:8000'))
+    withPolkadotSdkCompat(getWsProvider('ws://localhost:8000', {
+      timeout: 120_000,
+      heartbeatTimeout: 300_000,
+    }))
   )
   const kusamaRelayApi = kusamaRelayClient.getTypedApi(kusama_relay)
 
   const kusamaAssetHubClient = createClient(
-    withPolkadotSdkCompat(getWsProvider('ws://localhost:8001'))
+    withPolkadotSdkCompat(getWsProvider('ws://localhost:8001', {
+      timeout: 120_000,
+      heartbeatTimeout: 300_000,
+    }))
   )
   const kusamaAssetHubApi = kusamaAssetHubClient.getTypedApi(kusama_asset_hub)
 
   const encointerClient = createClient(
-      withPolkadotSdkCompat(getWsProvider('ws://localhost:8002'))
+      withPolkadotSdkCompat(getWsProvider('ws://localhost:8002', {
+        timeout: 120_000,
+        heartbeatTimeout: 300_000,
+      }))
   )
   const encointerApi = encointerClient.getTypedApi(kusama_encointer)
 

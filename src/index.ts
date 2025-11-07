@@ -98,7 +98,7 @@ async function main(cliOptions: CliOptions) {
   const kusamaRelayClient = createClient(
     withPolkadotSdkCompat(getWsProvider('ws://localhost:8000', {
       timeout: 120_000,
-      heartbeatTimeout: 300_000,
+      heartbeatTimeout: 400_000,
     }))
   )
   const kusamaRelayApi = kusamaRelayClient.getTypedApi(kusama_relay)
@@ -106,7 +106,7 @@ async function main(cliOptions: CliOptions) {
   const kusamaAssetHubClient = createClient(
     withPolkadotSdkCompat(getWsProvider('ws://localhost:8001', {
       timeout: 120_000,
-      heartbeatTimeout: 300_000,
+      heartbeatTimeout: 400_000,
     }))
   )
   const kusamaAssetHubApi = kusamaAssetHubClient.getTypedApi(kusama_asset_hub)
@@ -114,7 +114,7 @@ async function main(cliOptions: CliOptions) {
   const encointerClient = createClient(
       withPolkadotSdkCompat(getWsProvider('ws://localhost:8002', {
         timeout: 120_000,
-        heartbeatTimeout: 300_000,
+        heartbeatTimeout: 400_000,
       }))
   )
   const encointerApi = encointerClient.getTypedApi(kusama_encointer)
@@ -281,8 +281,11 @@ async function main(cliOptions: CliOptions) {
 
   console.log('apply_authorized_upgrade submitted successfully')
 
-  await encointer.dev.newBlock()
+  console.log('Destroying encointer client')
+  encointerClient.destroy()
 
+  console.log('Building block after applying the runtime upgrade')
+  await encointer.dev.newBlock() // should now succeed
   console.log('New block created after upgrade')
 
   // assetHub.pause()
@@ -292,8 +295,8 @@ async function main(cliOptions: CliOptions) {
   console.log('Destroying polkadot-api clients...')
   kusamaRelayClient.destroy()
   kusamaAssetHubClient.destroy()
-  encointerClient.destroy()
 
+  console.log('Tearing down networks...')
   await assetHub.teardown()
   await kusama.teardown()
   await encointer.teardown()

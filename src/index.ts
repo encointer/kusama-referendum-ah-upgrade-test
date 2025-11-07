@@ -289,7 +289,7 @@ async function main(cliOptions: CliOptions) {
   console.log('New block created after upgrade')
 
   // assetHub.pause()
-  // await kusama.pause()
+  // kusama.pause()
   // await encointer.pause()
 
   console.log('Destroying polkadot-api clients...')

@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 
-import { kusama_asset_hub, kusama_relay } from '@polkadot-api/descriptors'
+import { kusama_asset_hub, kusama_relay, kusama_encointer } from '@polkadot-api/descriptors'
 import { getPolkadotSigner } from 'polkadot-api/signer'
 import { compactAddLength } from '@polkadot/util'
 import { Binary, AccountId, HexString } from '@polkadot-api/substrate-bindings'
@@ -55,15 +55,16 @@ interface CliOptions {
 }
 
 async function main(cliOptions: CliOptions) {
-  console.log('Setting up Kusama and AssetHub networks...')
-  const { kusama, assetHub } = await setupNetworks({
+  console.log('Setting up Kusama, Assethub and Encointer networks...')
+  const { kusama, assetHub, encointer } = await setupNetworks({
     kusama: {
       endpoint: 'wss://kusama-rpc.n.dwellir.com',
       port: 8000,
       'mock-signature-host': true,
       'build-block-mode': 'Instant',
       runtimeLogLevel: 0,
-      'log-level': 0
+      'log-level': 0,
+      timeout: 360000
     },
     assetHub: {
       endpoint: 'wss://asset-hub-kusama-rpc.n.dwellir.com',
@@ -71,25 +72,52 @@ async function main(cliOptions: CliOptions) {
       'mock-signature-host': true,
       'build-block-mode': 'Instant',
       runtimeLogLevel: 0,
-      'log-level': 0
+      'log-level': 0,
+      timeout: 360000
     },
+     encointer: {
+         endpoint: 'wss://encointer-kusama-rpc.n.dwellir.com',
+         port: 8002,
+         'mock-signature-host': true,
+         'build-block-mode': 'Instant',
+         runtimeLogLevel: 0,
+         'log-level': 0,
+         timeout: 360000
+     },
   })
 
   console.log(`Asserting Kusama network setup: ${kusama ? 'SUCCESS' : 'FAILED'}`)
   assert(kusama, 'Kusama network setup failed')
   console.log(`Asserting AssetHub network setup: ${assetHub ? 'SUCCESS' : 'FAILED'}`)
   assert(assetHub, 'AssetHub network setup failed')
-  console.log('Both networks initialized successfully')
+  console.log(`Asserting Encointer network setup: ${encointer ? 'SUCCESS' : 'FAILED'}`)
+  assert(encointer, 'Encointer network setup failed')
+  console.log('All networks initialized successfully')
+
 
   const kusamaRelayClient = createClient(
-    withPolkadotSdkCompat(getWsProvider('ws://localhost:8000'))
+    withPolkadotSdkCompat(getWsProvider('ws://localhost:8000', {
+      timeout: 120_000,
+      heartbeatTimeout: 400_000,
+    }))
   )
   const kusamaRelayApi = kusamaRelayClient.getTypedApi(kusama_relay)
 
   const kusamaAssetHubClient = createClient(
-    withPolkadotSdkCompat(getWsProvider('ws://localhost:8001'))
+    withPolkadotSdkCompat(getWsProvider('ws://localhost:8001', {
+      timeout: 120_000,
+      heartbeatTimeout: 400_000,
+    }))
   )
   const kusamaAssetHubApi = kusamaAssetHubClient.getTypedApi(kusama_asset_hub)
+
+  const encointerClient = createClient(
+      withPolkadotSdkCompat(getWsProvider('ws://localhost:8002', {
+        timeout: 120_000,
+        heartbeatTimeout: 400_000,
+      }))
+  )
+  const encointerApi = encointerClient.getTypedApi(kusama_encointer)
 
   const fellowshipRefSubmitCall = await kusamaRelayApi.txFromCallData(
     Binary.fromHex(cliOptions.callToCreateFellowshipReferendum)
@@ -222,10 +250,12 @@ async function main(cliOptions: CliOptions) {
   })
   console.log('Setting public referendum to pass via scheduler...')
   await assetHub.dev.newBlock()
+  await kusama.dev.newBlock()
+  await encointer.dev.newBlock()
   console.log('Public referendum scheduled and executed')
 
-  console.log('Querying System.AuthorizedUpgrade on AssetHub...')
-  const authorizedUpgradeOnAh = await kusamaAssetHubApi.query.System.AuthorizedUpgrade.getValue()
+  console.log('Querying System.AuthorizedUpgrade on Encointer...')
+  const authorizedUpgradeOnAh = await encointerApi.query.System.AuthorizedUpgrade.getValue()
   const actualCodeHash = authorizedUpgradeOnAh?.code_hash.asHex()
   console.log(`Authorized upgrade code hash: ${actualCodeHash}`)
   console.log(`Expected code hash: ${cliOptions.expectedCodeHash}`)
@@ -241,29 +271,35 @@ async function main(cliOptions: CliOptions) {
   const wasmCode = readFileSync(cliOptions.wasm)
   console.log(`WASM file size: ${wasmCode.length} bytes`)
 
-  const applyAuthorizedUpgradeCall = assetHub.api.tx.system.applyAuthorizedUpgrade(
+  const applyAuthorizedUpgradeCall = encointer.api.tx.system.applyAuthorizedUpgrade(
     compactAddLength(wasmCode)
   )
 
   console.log('Submitting apply_authorized_upgrade as unsigned extrinsic...')
 
-  await assetHub.api.rpc.author.submitExtrinsic(applyAuthorizedUpgradeCall.toHex())
+  await encointer.api.rpc.author.submitExtrinsic(applyAuthorizedUpgradeCall.toHex())
 
   console.log('apply_authorized_upgrade submitted successfully')
 
-  await assetHub.dev.newBlock()
+  console.log('Destroying encointer client')
+  encointerClient.destroy()
 
+  console.log('Building block after applying the runtime upgrade')
+  await encointer.dev.newBlock() // should now succeed
   console.log('New block created after upgrade')
 
   // assetHub.pause()
-  // await kusama.pause()
+  // kusama.pause()
+  // await encointer.pause()
 
   console.log('Destroying polkadot-api clients...')
   kusamaRelayClient.destroy()
   kusamaAssetHubClient.destroy()
 
+  console.log('Tearing down networks...')
   await assetHub.teardown()
   await kusama.teardown()
+  await encointer.teardown()
 
   console.log('Cleanup complete, exiting...')
 }
